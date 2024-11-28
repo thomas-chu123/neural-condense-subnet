@@ -182,13 +182,17 @@ async def get_scoring_metrics(
     timeout: int = 240,
     config: bt.config = None,
 ) -> dict[str, list]:
-    payload = {
-        "miner_responses": [
-            {"compressed_kv_b64": r.compressed_kv_b64} for r in valid_responses
-        ],
-        "ground_truth_request": ground_truth_synapse.validator_payload
-        | {"model_name": model_name, "criterias": task_config.criterias},
-    }
+    # Move the payload creation to an executor
+    payload = await asyncio.get_running_loop().run_in_executor(
+        None,
+        lambda: {
+            "miner_responses": [
+                {"compressed_kv_b64": r.compressed_kv_b64} for r in valid_responses
+            ],
+            "ground_truth_request": ground_truth_synapse.validator_payload
+            | {"model_name": model_name, "criterias": task_config.criterias},
+        }
+    )
 
     async with httpx.AsyncClient() as client:
         response = await client.post(
@@ -201,11 +205,20 @@ async def get_scoring_metrics(
                 f"Scoring backend returned status code {response.status_code}"
             )
         scoring_response = response.json()
+    
     metrics = scoring_response["metrics"]
-    metrics["accelerate_metrics"] = [r.accelerate_score for r in valid_responses]
-    metrics = update_metrics_of_invalid_miners(
-        invalid_uids=invalid_uids,
-        metrics=metrics,
+    # Move the accelerate_metrics calculation to an executor as well
+    metrics["accelerate_metrics"] = await asyncio.get_running_loop().run_in_executor(
+        None,
+        lambda: [r.accelerate_score for r in valid_responses]
+    )
+    
+    # If update_metrics_of_invalid_miners is CPU-intensive, move it to executor too
+    metrics = await asyncio.get_running_loop().run_in_executor(
+        None,
+        update_metrics_of_invalid_miners,
+        invalid_uids,
+        metrics,
     )
     return metrics
 
