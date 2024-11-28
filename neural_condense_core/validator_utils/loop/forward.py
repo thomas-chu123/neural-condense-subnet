@@ -147,8 +147,7 @@ async def process_and_score_responses(
     total_uids = valid_uids + invalid_uids
 
     # Use run_in_threadpool instead of run_in_executor
-    final_ratings, initial_ratings = await asyncio.to_thread(
-        miner_manager.update_ratings,
+    final_ratings, initial_ratings = miner_manager.update_ratings(
         metrics=metrics,
         total_uids=total_uids,
         k_factor=k_factor,
@@ -184,15 +183,13 @@ async def get_scoring_metrics(
     config: bt.config = None,
 ) -> dict[str, list]:
     # Move the payload creation to an executor
-    payload = await asyncio.to_thread(
-        lambda: {
-            "miner_responses": [
-                {"compressed_kv_b64": r.compressed_kv_b64} for r in valid_responses
-            ],
-            "ground_truth_request": ground_truth_synapse.validator_payload
-            | {"model_name": model_name, "criterias": task_config.criterias},
-        }
-    )
+    payload = {
+        "miner_responses": [
+            {"compressed_kv_b64": r.compressed_kv_b64} for r in valid_responses
+        ],
+        "ground_truth_request": ground_truth_synapse.validator_payload
+        | {"model_name": model_name, "criterias": task_config.criterias},
+    }
     logger.info(f"Sending payload to scoring backend")
     async with httpx.AsyncClient() as client:
         response = await client.post(
@@ -208,16 +205,10 @@ async def get_scoring_metrics(
 
     metrics = scoring_response["metrics"]
     # Move the accelerate_metrics calculation to an executor as well
-    metrics["accelerate_metrics"] = await asyncio.to_thread(
-        lambda: [r.accelerate_score for r in valid_responses]
-    )
+    metrics["accelerate_metrics"] = [r.accelerate_score for r in valid_responses]
 
     # If update_metrics_of_invalid_miners is CPU-intensive, move it to executor too
-    metrics = await asyncio.to_thread(
-        update_metrics_of_invalid_miners,
-        invalid_uids,
-        metrics,
-    )
+    metrics = update_metrics_of_invalid_miners(invalid_uids, metrics)
     return metrics
 
 
