@@ -192,6 +192,7 @@ class Validator(base.BaseValidator):
                 return
             try:
                 logger.info("Processing and scoring responses.")
+                start_time = time.time()
                 metrics, total_uids = await vutils.loop.process_and_score_responses(
                     miner_manager=self.miner_manager,
                     valid_responses=valid_responses,
@@ -206,6 +207,10 @@ class Validator(base.BaseValidator):
                     use_wandb=self.config.validator.use_wandb,
                     config=self.config,
                     invalid_reasons=invalid_reasons,
+                )
+                end_time = time.time()
+                logger.info(
+                    f"Time taken to process and score responses: {end_time - start_time:.2f} seconds"
                 )
             except Exception as e:
                 logger.error(f"Error processing and scoring responses: {e}")

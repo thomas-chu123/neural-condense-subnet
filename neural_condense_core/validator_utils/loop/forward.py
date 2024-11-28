@@ -145,7 +145,9 @@ async def process_and_score_responses(
         config=config,
     )
     total_uids = valid_uids + invalid_uids
-    final_ratings, initial_ratings = miner_manager.update_ratings(
+    final_ratings, initial_ratings = await asyncio.get_running_loop().run_in_executor(
+        None,
+        miner_manager.update_ratings,
         metrics=metrics,
         total_uids=total_uids,
         k_factor=k_factor,
