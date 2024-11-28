@@ -102,8 +102,13 @@ async def validate_responses(
         except Exception as e:
             return False, str(e)
 
-    for uid, response in zip(uids, responses):
-        is_valid, reason = await verify_single_response(response)
+    # Create tasks for all responses in parallel
+    tasks = [verify_single_response(response) for response in responses]
+    # Wait for all verifications to complete
+    results = await asyncio.gather(*tasks)
+
+    # Process results maintaining order
+    for uid, (is_valid, reason), response in zip(uids, results, responses):
         if is_valid:
             valid_responses.append(response)
             valid_uids.append(uid)

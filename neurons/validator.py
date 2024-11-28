@@ -191,6 +191,7 @@ class Validator(base.BaseValidator):
                 traceback.print_exc()
                 return
             try:
+                logger.info("Processing and scoring responses.")
                 metrics, total_uids = await vutils.loop.process_and_score_responses(
                     miner_manager=self.miner_manager,
                     valid_responses=valid_responses,
