@@ -63,12 +63,21 @@ async def load_npy_from_url(url: str, max_size_mb: int = 1024):
         end_time = time.time()
         logger.info(f"Time taken to download: {end_time - start_time:.2f} seconds")
 
-        # Load the NumPy array from the downloaded file
+        # Move blocking operations to a thread pool
+        data = await run_in_threadpool(lambda: _load_and_cleanup(filename))
+        return data, ""
+    except Exception as e:
+        return None, str(e)
+
+def _load_and_cleanup(filename: str):
+    """Helper function to handle blocking operations in a thread pool."""
+    try:
         with open(filename, "rb") as f:
             buffer = io.BytesIO(f.read())
             data = np.load(buffer)
         os.remove(filename)
-        return data, ""
-
-    except Exception as e:
-        return None, str(e)
+        return data
+    finally:
+        # Ensure we try to clean up the file even if loading fails
+        if os.path.exists(filename):
+            os.remove(filename)

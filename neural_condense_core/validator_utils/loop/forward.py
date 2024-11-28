@@ -193,7 +193,7 @@ async def get_scoring_metrics(
             | {"model_name": model_name, "criterias": task_config.criterias},
         }
     )
-
+    logger.info(f"Sending payload to scoring backend")
     async with httpx.AsyncClient() as client:
         response = await client.post(
             f"http://{config.validator.score_backend.host}:{config.validator.score_backend.port}/get_metrics",
