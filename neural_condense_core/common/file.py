@@ -71,7 +71,7 @@ async def load_npy_from_url(url: str, max_size_mb: int = 1024):
 
         # Load and cleanup can also use the controlled executor
         data = await loop.run_in_executor(THREAD_POOL, _load_and_cleanup, filename)
-        return data, download_time, ""
+        return data, filename, download_time, ""
     except Exception as e:
         return None, 0, str(e)
 
@@ -82,9 +82,7 @@ def _load_and_cleanup(filename: str):
         with open(filename, "rb") as f:
             buffer = io.BytesIO(f.read())
             data = np.load(buffer)
-        os.remove(filename)
-        return data
-    finally:
-        # Ensure we try to clean up the file even if loading fails
-        if os.path.exists(filename):
-            os.remove(filename)
+        return data.astype(np.float32)
+    except Exception as e:
+        logger.error(f"Error loading NPY file: {e}")
+        return None
