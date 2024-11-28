@@ -81,4 +81,6 @@ class TextCompressProtocol(Synapse):
             kv_cache._seen_tokens / tier_config.max_condensed_tokens
         )
         response.compressed_length = kv_cache._seen_tokens
+        del kv_cache
+        del compressed_kv
         return True, ""
