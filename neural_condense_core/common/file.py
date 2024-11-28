@@ -60,16 +60,15 @@ async def load_npy_from_url(url: str, max_size_mb: int = 1024):
             )
             end_time = time.time()
             logger.info(f"Time taken to download: {end_time - start_time:.2f} seconds")
-            return filename
+            return filename, end_time - start_time
 
-        with THREAD_POOL as executor:
-            filename = executor.submit(_download, url).result(timeout=256)
+        filename, download_time = THREAD_POOL.submit(_download, url).result(timeout=256)
 
         # Move blocking operations to a thread pool
         data = _load_and_cleanup(filename)
-        return data, ""
+        return data, download_time, ""
     except Exception as e:
-        return None, str(e)
+        return None, 0, str(e)
 
 
 def _load_and_cleanup(filename: str):

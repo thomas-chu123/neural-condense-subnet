@@ -58,9 +58,10 @@ class TextCompressProtocol(Synapse):
         if not re.match(r"^https?://.*\.npy$", response.compressed_kv_url):
             return False, "Compressed KV URL must use HTTP or HTTPS."
 
-        start_time = time.time()
-        compressed_kv, error = await load_npy_from_url(response.compressed_kv_url)
-        response.download_time = time.time() - start_time
+        compressed_kv, download_time, error = await load_npy_from_url(
+            response.compressed_kv_url
+        )
+        response.download_time = download_time
         try:
             tensor = torch.from_numpy(compressed_kv)
             kv_cache = DynamicCache.from_legacy_cache(tensor)
