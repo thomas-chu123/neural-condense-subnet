@@ -11,7 +11,7 @@ import asyncio
 
 os.makedirs("tmp", exist_ok=True)
 # Remove all files in the tmp directory
-for file in os.listdir("tmp"):
+for file in tqdm(os.listdir("tmp"), desc="Cleaning tmp directory"):
     os.remove(os.path.join("tmp", file))
 
 
