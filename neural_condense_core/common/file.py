@@ -7,6 +7,7 @@ import os
 from tqdm import tqdm
 from ..executor import THREAD_POOL
 from ..logger import logger
+import asyncio
 
 os.makedirs("tmp", exist_ok=True)
 
@@ -62,10 +63,14 @@ async def load_npy_from_url(url: str, max_size_mb: int = 1024):
             logger.info(f"Time taken to download: {end_time - start_time:.2f} seconds")
             return filename, end_time - start_time
 
-        filename, download_time = THREAD_POOL.submit(_download, url).result(timeout=256)
+        # Use run_in_executor with our controlled thread pool
+        loop = asyncio.get_running_loop()
+        filename, download_time = await loop.run_in_executor(
+            THREAD_POOL, _download, url
+        )
 
-        # Move blocking operations to a thread pool
-        data = _load_and_cleanup(filename)
+        # Load and cleanup can also use the controlled executor
+        data = await loop.run_in_executor(THREAD_POOL, _load_and_cleanup, filename)
         return data, download_time, ""
     except Exception as e:
         return None, 0, str(e)

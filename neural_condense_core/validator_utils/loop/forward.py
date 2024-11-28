@@ -91,7 +91,9 @@ async def validate_responses(
     async def verify_single_response(response):
         try:
             # Add timeout to prevent hanging
-            is_valid, reason = await TextCompressProtocol.verify(response, tier_config)
+            is_valid, reason = await asyncio.wait_for(
+                TextCompressProtocol.verify(response, tier_config), timeout=256
+            )
             return is_valid, reason
         except asyncio.TimeoutError:
             return False, "Verification timeout"
