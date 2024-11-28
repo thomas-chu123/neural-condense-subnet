@@ -179,17 +179,38 @@ class MinerManager:
 
                 thresholded_ratings = np.array(thresholded_ratings)
 
-                mean_thresholded_ratings = np.mean(thresholded_ratings)
-                adjustment = (
-                    constants.EXPECTED_MEAN_ELO_RATING - mean_thresholded_ratings
-                )
-                thresholded_ratings += adjustment
+                # Adjust ratings to match expected mean and standard deviation
+                nonzero_mask = thresholded_ratings > 0
+                if np.any(nonzero_mask):
+                    current_std = np.std(thresholded_ratings[nonzero_mask])
+                    current_mean = np.mean(thresholded_ratings[nonzero_mask])
+
+                    if current_std > 0:
+                        # Scale to match expected std dev
+                        target_std = constants.EXPECTED_MAX_STD_ELO_RATING
+                        scale_factor = target_std / current_std
+
+                        # Center, scale, and shift to expected mean
+                        thresholded_ratings[nonzero_mask] = (
+                            thresholded_ratings[nonzero_mask] - current_mean
+                        ) * scale_factor + constants.EXPECTED_MEAN_ELO_RATING
+                        thresholded_ratings[
+                            thresholded_ratings < constants.FLOOR_ELO_RATING
+                        ] = constants.FLOOR_ELO_RATING
+
+                        logger.info(
+                            "adjust_ratings",
+                            tier=tier,
+                            mean=current_mean,
+                            std=current_std,
+                            scale_factor=scale_factor,
+                        )
+
                 data = {
                     "uids": tier_uids,
                     "original_ratings": tier_ratings,
                     "thresholded_ratings": thresholded_ratings,
                 }
-                logger.info(f"Elo RatingAdjustment: {adjustment}")
                 logger.info(
                     f"Thresholded Ratings for Tier {tier} (thresholded by {top_percentage}) :\n{pd.DataFrame(data).to_markdown()}"
                 )
