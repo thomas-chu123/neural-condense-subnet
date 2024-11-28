@@ -57,6 +57,7 @@ async def load_npy_from_url(url: str, max_size_mb: int = 1024):
             chunk_size=chunk_size,
             max_retries=max_retries,
             parallel_failures=parallel_failures,
+            show_progress=False,
         )
         end_time = time.time()
         logger.info(f"Time taken to download: {end_time - start_time:.2f} seconds")
