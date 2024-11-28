@@ -47,33 +47,21 @@ async def load_npy_from_url(url: str, max_size_mb: int = 1024):
         parallel_failures = 2
         max_retries = 3
 
-        # Initialize the tqdm progress bar
-        with tqdm(
-            total=content_length, unit="B", unit_scale=True, desc="Downloading"
-        ) as pbar:
+        start_time = time.time()
 
-            def progress_callback(size):
-                pbar.update(size)
+        await run_in_threadpool(
+            hf_transfer.download,
+            url=url,
+            filename=filename,
+            max_files=max_files,
+            chunk_size=chunk_size,
+            parallel_failures=parallel_failures,
+            max_retries=max_retries,
+            headers=None,  # Add headers if needed
+        )
 
-            # Start measuring download time
-            start_time = time.time()
-
-            # Use hf_transfer to download the file
-            await run_in_threadpool(
-                hf_transfer.download,
-                url=url,
-                filename=filename,
-                max_files=max_files,
-                chunk_size=chunk_size,
-                parallel_failures=parallel_failures,
-                max_retries=max_retries,
-                headers=None,  # Add headers if needed
-                callback=progress_callback,
-            )
-
-            # Measure end time
-            end_time = time.time()
-            logger.info(f"Time taken to download: {end_time - start_time:.2f} seconds")
+        end_time = time.time()
+        logger.info(f"Time taken to download: {end_time - start_time:.2f} seconds")
 
         # Load the NumPy array from the downloaded file
         with open(filename, "rb") as f:
