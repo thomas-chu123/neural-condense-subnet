@@ -177,11 +177,19 @@ class MinerManager:
                     if tier_uids[i] not in top_uids:
                         thresholded_ratings[i] = 0
 
+                thresholded_ratings = np.array(thresholded_ratings)
+
+                mean_thresholded_ratings = np.mean(thresholded_ratings)
+                adjustment = (
+                    constants.EXPECTED_MEAN_ELO_RATING - mean_thresholded_ratings
+                )
+                thresholded_ratings += adjustment
                 data = {
                     "uids": tier_uids,
                     "original_ratings": tier_ratings,
                     "thresholded_ratings": thresholded_ratings,
                 }
+                logger.info(f"Elo RatingAdjustment: {adjustment}")
                 logger.info(
                     f"Thresholded Ratings for Tier {tier} (thresholded by {top_percentage}) :\n{pd.DataFrame(data).to_markdown()}"
                 )
