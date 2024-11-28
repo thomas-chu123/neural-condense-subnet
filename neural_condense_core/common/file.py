@@ -10,6 +10,9 @@ from ..logger import logger
 import asyncio
 
 os.makedirs("tmp", exist_ok=True)
+# Remove all files in the tmp directory
+for file in os.listdir("tmp"):
+    os.remove(os.path.join("tmp", file))
 
 
 async def load_npy_from_url(url: str, max_size_mb: int = 1024):
