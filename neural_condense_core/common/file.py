@@ -5,7 +5,7 @@ import time
 import httpx
 import os
 from tqdm import tqdm
-from ..constants import constants
+from ..executor import THREAD_POOL
 from ..logger import logger
 
 os.makedirs("tmp", exist_ok=True)
@@ -62,7 +62,7 @@ async def load_npy_from_url(url: str, max_size_mb: int = 1024):
             logger.info(f"Time taken to download: {end_time - start_time:.2f} seconds")
             return filename
 
-        with constants.THREAD_POOL as executor:
+        with THREAD_POOL as executor:
             filename = executor.submit(_download, url)
 
         # Move blocking operations to a thread pool
