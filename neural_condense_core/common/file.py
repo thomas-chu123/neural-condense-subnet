@@ -63,7 +63,7 @@ async def load_npy_from_url(url: str, max_size_mb: int = 1024):
             return filename
 
         with THREAD_POOL as executor:
-            filename = executor.submit(_download, url)
+            filename = executor.submit(_download, url).result(timeout=256)
 
         # Move blocking operations to a thread pool
         data = _load_and_cleanup(filename)
