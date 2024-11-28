@@ -49,9 +49,6 @@ class Validator(base.BaseValidator):
 
         if self.config.validator.use_wandb:
             vutils.loop.initialize_wandb(self.dendrite, self.metagraph, self.uid)
-
-        # Add a thread pool executor
-        self.loop = asyncio.get_event_loop()
         try:
             self.set_weights()
         except Exception as e:
@@ -285,5 +282,7 @@ class Validator(base.BaseValidator):
 
 
 if __name__ == "__main__":
-    validator = Validator()
-    asyncio.run(validator.run())
+    with Validator() as validator:
+        while True:
+            logger.info("validator_status", object=validator)
+            time.sleep(60)
