@@ -110,6 +110,11 @@ class Constants(BaseModel):
     TOP_PERCENTAGE_FOR_ALLOCATING_WEIGHTS: float = 0.3
     EXPECTED_MEAN_ELO_RATING: float = 1000
     EXPECTED_MAX_STD_ELO_RATING: float = 300
+    THREAD_POOL_SIZE: int = 8
+    THREAD_POOL = None
+
+    def init_thread_pool(self):
+        self.THREAD_POOL = ThreadPoolExecutor(max_workers=self.THREAD_POOL_SIZE)
 
     # Adjust values based on NETWORK environment variable
     def __init__(self, **data):

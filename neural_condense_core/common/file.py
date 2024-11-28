@@ -7,10 +7,8 @@ import os
 from tqdm import tqdm
 from ..constants import constants
 from ..logger import logger
-from firerequests import FireRequests
 
 os.makedirs("tmp", exist_ok=True)
-fr = FireRequests()
 
 
 async def load_npy_from_url(url: str, max_size_mb: int = 1024):
@@ -43,24 +41,29 @@ async def load_npy_from_url(url: str, max_size_mb: int = 1024):
                 )
 
         # Define parameters for hf_transfer
-        filename = os.path.join("tmp", url.split("/")[-1])
-        chunk_size = 1024 * 1024  # 1 MB chunks
-        max_files = 16  # Number of parallel downloads
-        parallel_failures = 3
-        max_retries = 5
+        def _download(url):
+            filename = os.path.join("tmp", url.split("/")[-1])
+            chunk_size = 1024 * 1024  # 1 MB chunks
+            max_files = 16  # Number of parallel downloads
+            parallel_failures = 2
+            max_retries = 3
 
-        start_time = time.time()
-        await fr.download_file(
-            url=url,
-            filename=filename,
-            max_files=max_files,
-            chunk_size=chunk_size,
-            max_retries=max_retries,
-            parallel_failures=parallel_failures,
-            show_progress=False,
-        )
-        end_time = time.time()
-        logger.info(f"Time taken to download: {end_time - start_time:.2f} seconds")
+            start_time = time.time()
+            hf_transfer.download(
+                url=url,
+                filename=filename,
+                max_files=max_files,
+                chunk_size=chunk_size,
+                parallel_failures=parallel_failures,
+                max_retries=max_retries,
+                headers=None,  # Add headers if needed
+            )
+            end_time = time.time()
+            logger.info(f"Time taken to download: {end_time - start_time:.2f} seconds")
+            return filename
+
+        with constants.THREAD_POOL as executor:
+            filename = executor.submit(_download, url)
 
         # Move blocking operations to a thread pool
         data = _load_and_cleanup(filename)
