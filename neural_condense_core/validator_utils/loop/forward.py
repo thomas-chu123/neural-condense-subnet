@@ -145,8 +145,9 @@ async def process_and_score_responses(
         config=config,
     )
     total_uids = valid_uids + invalid_uids
-    final_ratings, initial_ratings = await asyncio.get_running_loop().run_in_executor(
-        None,
+
+    # Use run_in_threadpool instead of run_in_executor
+    final_ratings, initial_ratings = await asyncio.to_thread(
         miner_manager.update_ratings,
         metrics=metrics,
         total_uids=total_uids,
@@ -183,8 +184,7 @@ async def get_scoring_metrics(
     config: bt.config = None,
 ) -> dict[str, list]:
     # Move the payload creation to an executor
-    payload = await asyncio.get_running_loop().run_in_executor(
-        None,
+    payload = await asyncio.to_thread(
         lambda: {
             "miner_responses": [
                 {"compressed_kv_b64": r.compressed_kv_b64} for r in valid_responses
@@ -205,17 +205,15 @@ async def get_scoring_metrics(
                 f"Scoring backend returned status code {response.status_code}"
             )
         scoring_response = response.json()
-    
+
     metrics = scoring_response["metrics"]
     # Move the accelerate_metrics calculation to an executor as well
-    metrics["accelerate_metrics"] = await asyncio.get_running_loop().run_in_executor(
-        None,
+    metrics["accelerate_metrics"] = await asyncio.to_thread(
         lambda: [r.accelerate_score for r in valid_responses]
     )
-    
+
     # If update_metrics_of_invalid_miners is CPU-intensive, move it to executor too
-    metrics = await asyncio.get_running_loop().run_in_executor(
-        None,
+    metrics = await asyncio.to_thread(
         update_metrics_of_invalid_miners,
         invalid_uids,
         metrics,
