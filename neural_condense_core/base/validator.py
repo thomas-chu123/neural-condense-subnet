@@ -111,13 +111,6 @@ class Validator(ABC):
             time.sleep(time_to_sleep)
 
             try:
-                self.set_weights()
-
-            except Exception as e:
-                logger.error(f"Set weights error: {e}")
-                traceback.print_exc()
-
-            try:
                 self.resync_metagraph()
             except Exception as e:
                 logger.error(f"Resync metagraph error: {e}")
@@ -133,6 +126,15 @@ class Validator(ABC):
     def set_weights(self):
         pass
 
+    def set_weights_in_background(self):
+        while not self.should_exit:
+            try:
+                self.set_weights()
+            except Exception as e:
+                logger.error(f"Set weights error: {e}")
+                traceback.print_exc()
+            time.sleep(constants.SUBNET_TEMPO)
+
     def resync_metagraph(self):
         self.metagraph.sync()
 
@@ -146,19 +148,12 @@ class Validator(ABC):
             self.should_exit = False
             self.thread = threading.Thread(target=self.run, daemon=True)
             self.thread.start()
+            self.thread_set_weights = threading.Thread(
+                target=self.set_weights_in_background, daemon=True
+            )
+            self.thread_set_weights.start()
             self.is_running = True
             logger.debug("Started")
-
-    def stop_run_thread(self):
-        """
-        Stops the validator's operations that are running in the background thread.
-        """
-        if self.is_running:
-            logger.debug("Stopping validator in background thread.")
-            self.should_exit = True
-            self.thread.join(5)
-            self.is_running = False
-            logger.debug("Stopped")
 
     def __enter__(self):
         self.run_in_background_thread()
@@ -181,5 +176,6 @@ class Validator(ABC):
             logger.debug("Stopping validator in background thread.")
             self.should_exit = True
             self.thread.join(5)
+            self.thread_set_weights.join(5)
             self.is_running = False
             logger.debug("Stopped")

@@ -205,7 +205,6 @@ async def get_scoring_metrics(
                 f"Scoring backend returned status code {response.status_code}"
             )
         scoring_response = response.json()
-        logger.info(f"Received scoring response")
 
     metrics = scoring_response["metrics"]
     # Move the accelerate_metrics calculation to an executor as well

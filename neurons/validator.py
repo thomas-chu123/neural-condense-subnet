@@ -49,11 +49,6 @@ class Validator(base.BaseValidator):
 
         if self.config.validator.use_wandb:
             vutils.loop.initialize_wandb(self.dendrite, self.metagraph, self.uid)
-        try:
-            self.set_weights()
-        except Exception as e:
-            logger.error(f"First try to set weights failed: {e}")
-            traceback.print_exc()
 
     async def start_epoch(self):
         """
@@ -251,10 +246,10 @@ class Validator(base.BaseValidator):
         if np.all(weights == 0):
             weights = np.ones(len(self.metagraph.uids))
             logger.info("All weights are zero, setting to ones.")
-        weight_info = list(zip(self.metagraph.uids, weights))
-        weight_info_df = pd.DataFrame(weight_info, columns=["uid", "weight"])
-        logger.info(f"Weight info:\n{weight_info_df.to_markdown()}")
         if self.current_block > self.last_update + constants.SUBNET_TEMPO:
+            weight_info = list(zip(self.metagraph.uids, weights))
+            weight_info_df = pd.DataFrame(weight_info, columns=["uid", "weight"])
+            logger.info(f"Weight info:\n{weight_info_df.to_markdown()}")
             logger.info("Actually trying to set weights.")
 
             # Use ThreadPoolExecutor to add timeout capability
