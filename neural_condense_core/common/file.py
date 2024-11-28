@@ -5,14 +5,17 @@ import time
 import httpx
 import os
 from tqdm import tqdm
+from ..constants import constants
 from ..logger import logger
+from firerequests import FireRequests
 
 os.makedirs("tmp", exist_ok=True)
+fr = FireRequests()
 
 
 async def load_npy_from_url(url: str, max_size_mb: int = 1024):
     """
-    Load a `.npy` file from a URL directly into memory.
+    Load a `.npy` file from a URL using the hf_transfer library for efficient downloading.
 
     Args:
         url (str): URL of the `.npy` file.
@@ -28,30 +31,52 @@ async def load_npy_from_url(url: str, max_size_mb: int = 1024):
             if response.status_code != 200:
                 return None, f"Failed to fetch file info: HTTP {response.status_code}"
 
+            # Get content length in bytes
             content_length = int(response.headers.get("content-length", 0))
             max_size_bytes = max_size_mb * 1024 * 1024
 
+            # Check if file exceeds the size limit
             if content_length > max_size_bytes:
                 return (
                     None,
                     f"File too large: {content_length / (1024 * 1024):.1f}MB exceeds {max_size_mb}MB limit",
                 )
 
-            # Stream directly into memory
-            start_time = time.time()
-            async with client.stream("GET", url) as response:
-                response.raise_for_status()
-                buffer = io.BytesIO()
-                async for chunk in response.aiter_bytes():
-                    buffer.write(chunk)
+        # Define parameters for hf_transfer
+        filename = os.path.join("tmp", url.split("/")[-1])
+        chunk_size = 1024 * 1024  # 1 MB chunks
+        max_files = 16  # Number of parallel downloads
+        parallel_failures = 3
+        max_retries = 5
 
-            end_time = time.time()
-            logger.info(f"Time taken to download: {end_time - start_time:.2f} seconds")
+        start_time = time.time()
+        await fr.download_file(
+            url=url,
+            filename=filename,
+            max_files=max_files,
+            chunk_size=chunk_size,
+            max_retries=max_retries,
+            parallel_failures=parallel_failures,
+        )
+        end_time = time.time()
+        logger.info(f"Time taken to download: {end_time - start_time:.2f} seconds")
 
-            # Load NumPy array from buffer
-            buffer.seek(0)
-            data = np.load(buffer)
-            return data, ""
-
+        # Move blocking operations to a thread pool
+        data = _load_and_cleanup(filename)
+        return data, ""
     except Exception as e:
         return None, str(e)
+
+
+def _load_and_cleanup(filename: str):
+    """Helper function to handle blocking operations in a thread pool."""
+    try:
+        with open(filename, "rb") as f:
+            buffer = io.BytesIO(f.read())
+            data = np.load(buffer)
+        os.remove(filename)
+        return data
+    finally:
+        # Ensure we try to clean up the file even if loading fails
+        if os.path.exists(filename):
+            os.remove(filename)
