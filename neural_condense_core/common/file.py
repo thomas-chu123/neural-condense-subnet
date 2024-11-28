@@ -76,7 +76,7 @@ async def load_npy_from_url(url: str, max_size_mb: int = 1024):
         data = await loop.run_in_executor(THREAD_POOL, _load_and_cleanup, filename)
         return data, filename, download_time, ""
     except Exception as e:
-        return None, 0, str(e)
+        return None, "", 0, str(e)
 
 
 def _load_and_cleanup(filename: str):
