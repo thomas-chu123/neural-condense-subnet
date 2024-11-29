@@ -50,6 +50,8 @@ class Validator(base.BaseValidator):
         if self.config.validator.use_wandb:
             vutils.loop.initialize_wandb(self.dendrite, self.metagraph, self.uid)
 
+        self.set_weights_executor = ThreadPoolExecutor(max_workers=1)
+
     async def start_epoch(self):
         """
         Main validation loop that processes miners across all tiers.
@@ -252,14 +254,22 @@ class Validator(base.BaseValidator):
             logger.info(f"Weight info:\n{weight_info_df.to_markdown()}")
             logger.info("Actually trying to set weights.")
             try:
-                result = self.subtensor.set_weights(
+                # result = self.subtensor.set_weights(
+                #     netuid=self.config.netuid,
+                #     wallet=self.wallet,
+                #     uids=self.metagraph.uids,
+                #     weights=weights,
+                #     wait_for_inclusion=True,
+                #     version_key=__spec_version__,
+                # )
+                future = self.set_weights_executor.submit(
+                    self.subtensor.set_weights,
                     netuid=self.config.netuid,
                     wallet=self.wallet,
                     uids=self.metagraph.uids,
                     weights=weights,
-                    wait_for_inclusion=True,
-                    version_key=__spec_version__,
                 )
+                result = future.result(timeout=120)
             except Exception as e:
                 logger.error(f"Failed to set weights: {e}")
                 traceback.print_exc()
@@ -275,4 +285,7 @@ if __name__ == "__main__":
     with Validator() as validator:
         while True:
             logger.info("validator_status", object=validator)
+            if not validator.thread_set_weights.is_alive():
+                logger.info("Starting set weights thread.")
+                validator.thread_set_weights.start()
             time.sleep(60)
