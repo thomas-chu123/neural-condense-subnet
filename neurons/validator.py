@@ -261,10 +261,10 @@ class Validator(base.BaseValidator):
         ) = bt.utils.weight_utils.convert_weights_and_uids_for_emit(
             uids=processed_weight_uids, weights=processed_weights
         )
+        weight_info = list(zip(uint_uids, uint_weights))
+        weight_info_df = pd.DataFrame(weight_info, columns=["uid", "weight"])
+        logger.info(f"Weight info:\n{weight_info_df.to_markdown()}")
         if self.current_block > self.last_update + constants.SUBNET_TEMPO:
-            weight_info = list(zip(uint_uids, uint_weights))
-            weight_info_df = pd.DataFrame(weight_info, columns=["uid", "weight"])
-            logger.info(f"Weight info:\n{weight_info_df.to_markdown()}")
             logger.info("Actually trying to set weights.")
             try:
                 future = self.set_weights_executor.submit(
