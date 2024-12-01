@@ -87,7 +87,7 @@ class ChallengeGenerator:
         hidden_messages = [
             Message(
                 role="user",
-                content=f"Based on the context provided, complete this sentence: {fill_in_the_blank_sentence} \nProvide only the missing text without any additional explanation.",
+                content=f"Based on the context provided, find the missing text:\n\n{fill_in_the_blank_sentence} \nReturn only the missing text without any additional explanation.",
             ),
             Message(role="assistant", content=hidden_sentence),
         ]

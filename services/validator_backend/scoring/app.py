@@ -21,7 +21,7 @@ structlog.configure(
         structlog.processors.add_log_level,
         structlog.processors.StackInfoRenderer(),
         structlog.processors.format_exc_info,
-        structlog.processors.JSONRenderer()
+        structlog.processors.JSONRenderer(),
     ]
 )
 
@@ -44,10 +44,11 @@ class ScoringService:
         )
         self.judge_pipeline = pipeline(
             "text-generation",
-            model="unsloth/Meta-Llama-3.1-8B-Instruct",
+            model="nvidia/Mistral-NeMo-12B-Instruct",
             device=self.device,
+            dtype=self.dtype,
         )
-        print("Loaded judge pipeline")
+        logger.info("Loaded judge pipeline")
 
     @torch.no_grad()
     def get_metrics(self, request: BatchedScoringRequest) -> dict[str, float]:
@@ -72,16 +73,16 @@ class ScoringService:
                     model=self.model,
                 )
             except Exception as e:
-                logger.error("metric_handler_error", 
+                logger.error(
+                    "metric_handler_error",
                     error=str(e),
                     handler_name=metric_handler.__name__,
-                    traceback=traceback.format_exc()
+                    traceback=traceback.format_exc(),
                 )
                 value = None
             values.append(value)
-            logger.info("metric_value", 
-                handler_name=metric_handler.__name__,
-                value=value
+            logger.info(
+                "metric_value", handler_name=metric_handler.__name__, value=value
             )
         values = preprocess_batch(values)
         return {"metrics": {criteria: values}}

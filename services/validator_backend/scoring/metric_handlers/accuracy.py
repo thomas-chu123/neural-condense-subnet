@@ -1,7 +1,13 @@
 import torch
 import torch.nn.functional as F
-from transformers import AutoTokenizer, AutoModelForCausalLM, DynamicCache, TextGenerationPipeline
+from transformers import (
+    AutoTokenizer,
+    AutoModelForCausalLM,
+    DynamicCache,
+    TextGenerationPipeline,
+)
 import time
+
 DEFAULT_VALUE = 0
 
 
@@ -47,24 +53,38 @@ def accuracy(
     )
     kv_cache = kv_cache.to(device=device)
     start_time = time.time()
-    outputs = model.generate(input_ids=input_ids, past_key_values=kv_cache, max_new_tokens=max_new_tokens)
+    outputs = model.generate(
+        input_ids=input_ids, past_key_values=kv_cache, max_new_tokens=max_new_tokens
+    )
     end_time = time.time()
     print(f"Generation time: {end_time - start_time} seconds")
-    completion = tokenizer.decode(outputs[0][input_ids.shape[1]:], skip_special_tokens=True)
+    completion = tokenizer.decode(
+        outputs[0][input_ids.shape[1] :], skip_special_tokens=True
+    )
     completion = completion.strip() or "I don't know"
     ground_truth = expected_completion.strip()
     judge_messages = [
         {
             "role": "user",
-            "content": f"Judge the correctness of the answer versus the ground truth. Return concisely 'yes' if the answer is correct, 'no' otherwise, don't need to explain.\n\n### **Ground truth**: {ground_truth}\n\n### **Answer**: {completion}",
+            "content": (
+                "Evaluate the correctness of the given answer in comparison to the provided ground truth. "
+                "Respond concisely with 'yes' if the answer matches the ground truth idea and contains necessary information, "
+                "or 'no' if it is incorrect. No additional explanation is required.\n\n"
+                "### Ground Truth:\n---\n{ground_truth}\n---\n\n"
+                "### Answer:\n---\n{completion}\n---"
+            ).format(ground_truth=ground_truth, completion=completion),
         },
     ]
+
     print(f"Judge messages: {judge_messages}")
     start_time = time.time()
-    score = judge_pipeline(judge_messages, max_new_tokens=32, return_full_text=False)[0]["generated_text"]
+    score = judge_pipeline(judge_messages, max_new_tokens=32, return_full_text=False)[
+        0
+    ]["generated_text"]
     end_time = time.time()
     print(f"Judge time: {end_time - start_time} seconds. Judge score: {score}")
-    return 1 if 'yes' in score.lower() else 0
+    return 1 if "yes" in score.lower() else 0
+
 
 def preprocess_batch(values: list[float]) -> list[float]:
     return [value if value is not None else DEFAULT_VALUE for value in values]
