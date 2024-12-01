@@ -5,8 +5,8 @@ from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
     DynamicCache,
-    TextGenerationPipeline,
 )
+from transformers import pipeline
 import random
 import structlog
 import gc
@@ -42,9 +42,9 @@ class ScoringService:
         self.tokenizer = AutoTokenizer.from_pretrained(
             "Condense-AI/Mistral-7B-Instruct-v0.2"
         )
-        self.judge_pipeline = TextGenerationPipeline(
-            model=self.model,
-            tokenizer=self.tokenizer,
+        self.judge_pipeline = pipeline(
+            "text-generation",
+            model="unsloth/Llama-3.2-3B-Instruct",
             device=self.device,
         )
 
