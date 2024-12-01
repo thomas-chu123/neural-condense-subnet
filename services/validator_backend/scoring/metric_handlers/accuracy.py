@@ -21,7 +21,6 @@ def accuracy(
         return_tensors="pt",
         add_special_tokens=False,
         max_length=max_tokens,
-        bos_token=[""]
         **kwargs,
     ).input_ids.to(device=device, dtype=torch.long)
     num_seen_tokens = kv_cache._seen_tokens
@@ -42,7 +41,7 @@ def accuracy(
     outputs = model.generate(input_ids=input_ids, past_key_values=kv_cache, max_new_tokens=max_tokens)
     end_time = time.time()
     print(f"Generation time: {end_time - start_time} seconds")
-    completion = tokenizer.decode(outputs[0][len(prompt_ids):], skip_special_tokens=True)
+    completion = tokenizer.decode(outputs[0][len(input_ids):], skip_special_tokens=True)
     completion = completion.strip() or "I don't know"
     ground_truth = expected_completion.strip()
     judge_messages = [

@@ -63,12 +63,12 @@ class ScoringService:
                     )
                 )
                 value = metric_handler(
+                    judge_pipeline=self.judge_pipeline,
                     kv_cache=kv_cache,
                     activation_prompt=request.ground_truth_request.activation_prompt,
                     expected_completion=request.ground_truth_request.expected_completion,
                     tokenizer=self.tokenizer,
                     model=self.model,
-                    max_tokens=4096,
                 )
             except Exception as e:
                 logger.error("metric_handler_error", 
