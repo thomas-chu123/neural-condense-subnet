@@ -83,7 +83,7 @@ class Constants(BaseModel):
         ),
         SyntheticTaskConfig(
             task="trivial_qa_conversation",
-            criterias=["accuracy"],
+            criterias=["bleu"],
             rewarding_frequency=1,
             weight=3,
         ),
