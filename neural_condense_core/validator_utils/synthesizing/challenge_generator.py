@@ -59,7 +59,9 @@ class ChallengeGenerator:
         assert len(hidden_messages) == 2
         synapse = self._build_protocol(tokenizer, messages, hidden_messages)
         if task in ["question_answering", "trivial_qa_conversation"]:
-            synapse.expected_completion = hidden_messages[1].content
+            synapse.expected_completion = hidden_messages[1].content.replace(
+                self.end_activation_token, ""
+            )
         return synapse
     @retry(max_attempts=3)
     async def _build_trivial_qa_conversation(
@@ -73,7 +75,9 @@ class ChallengeGenerator:
         selected_message_index = content_sentences.index(max(content_sentences))
         selected_message_content = messages[selected_message_index].content
         sentences = selected_message_content.split(".")
-        sentence_index = random.randint(1, len(sentences) - 1)
+        sentence_lengths = [len(sentence.split(" ")) for sentence in sentences]
+        max_sentence_length = max(sentence_lengths)
+        sentence_index = sentence_lengths.index(max_sentence_length)
         hidden_sentence = sentences[sentence_index]
         sentences[sentence_index] = "______"
         fill_in_the_blank_sentence = ".".join(
@@ -83,7 +87,7 @@ class ChallengeGenerator:
         hidden_messages = [
             Message(
                 role="user",
-                content=f"From the conversation above, fill in the blank, if you can't say: {fill_in_the_blank_sentence}",
+                content=f"Based on the context provided, complete this sentence: {fill_in_the_blank_sentence} \nProvide only the missing text without any additional explanation.",
             ),
             Message(role="assistant", content=hidden_sentence),
         ]
@@ -95,20 +99,17 @@ class ChallengeGenerator:
     ) -> Tuple[List[Message], List[Message]]:
         messages, _ = await self._build_causal_conversation(max_chars)
 
-        turn_format = """[Role]: [Message]
+        turn_format = """Format each conversation turn as follows:
+### **[Role]**: [Message]
+
 Example:
 ### **User**: Hello, how are you?
 ---
 ### **Assistant**: I am fine, thank you.
 ---
-### **User**: What is your name?
----
-### **Assistant**: I am a helpful assistant.
----
 ... other turns
-
 """
-        activation_prompt = f"Please paraphrase all the messages in the conversation above in the format {turn_format}"
+        activation_prompt = f"Rewrite the conversation above using the following format, maintaining the exact same meaning:\n\n{turn_format}"
         formatted_messages = [
             f"### **{msg.role.capitalize()}**: {msg.content}" for msg in messages
         ]
@@ -195,8 +196,8 @@ Example:
         hidden_messages: List[Message],
     ) -> TextCompressProtocol:
         messages[-1].content = messages[-1].content + self.start_activation_token
-        hidden_messages[0].content = (
-            hidden_messages[0].content + self.end_activation_token
+        hidden_messages[1].content = (
+            self.end_activation_token + hidden_messages[1].content
         )
 
         all_messages = [msg.model_dump() for msg in messages + hidden_messages]
