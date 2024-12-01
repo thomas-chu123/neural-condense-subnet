@@ -46,7 +46,7 @@ class ScoringService:
             "text-generation",
             model="unsloth/Mistral-Nemo-Instruct-2407",
             device=self.device,
-            dtype=self.dtype,
+            torch_dtype=self.dtype,
         )
         logger.info("Loaded judge pipeline")
 
