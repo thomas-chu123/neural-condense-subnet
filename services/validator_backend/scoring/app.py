@@ -44,7 +44,7 @@ class ScoringService:
         )
         self.judge_pipeline = pipeline(
             "text-generation",
-            model="nvidia/Mistral-NeMo-12B-Instruct",
+            model="unsloth/Mistral-Nemo-Instruct-2407",
             device=self.device,
             dtype=self.dtype,
         )
