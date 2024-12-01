@@ -47,6 +47,7 @@ class ScoringService:
             model="unsloth/Llama-3.2-3B-Instruct",
             device=self.device,
         )
+        print("Loaded judge pipeline")
 
     @torch.no_grad()
     def get_metrics(self, request: BatchedScoringRequest) -> dict[str, float]:
