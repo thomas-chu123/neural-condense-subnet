@@ -56,8 +56,11 @@ class ChallengeGenerator:
         messages, hidden_messages = await self.task_to_builder[task](
             max_context_length_in_chars
         )
-        return self._build_protocol(tokenizer, messages, hidden_messages)
-
+        assert len(hidden_messages) == 2
+        synapse = self._build_protocol(tokenizer, messages, hidden_messages)
+        if task in ["question_answering", "trivial_qa_conversation"]:
+            synapse.expected_completion = hidden_messages[1].content
+        return synapse
     @retry(max_attempts=3)
     async def _build_trivial_qa_conversation(
         self, max_chars: int
@@ -80,7 +83,7 @@ class ChallengeGenerator:
         hidden_messages = [
             Message(
                 role="user",
-                content=f"From the conversation above, fill in the blank: {fill_in_the_blank_sentence}",
+                content=f"From the conversation above, fill in the blank, if you can't say: {fill_in_the_blank_sentence}",
             ),
             Message(role="assistant", content=hidden_sentence),
         ]
@@ -94,20 +97,24 @@ class ChallengeGenerator:
 
         turn_format = """[Role]: [Message]
 Example:
-- User: Hello, how are you?
-- Assistant: I am fine, thank you.
-- User: What is your name?
-- Assistant: I am a helpful assistant.
+### **User**: Hello, how are you?
+---
+### **Assistant**: I am fine, thank you.
+---
+### **User**: What is your name?
+---
+### **Assistant**: I am a helpful assistant.
+---
 ... other turns
 
 """
         activation_prompt = f"Please paraphrase all the messages in the conversation above in the format {turn_format}"
         formatted_messages = [
-            f"- {msg.role.capitalize()}: {msg.content}" for msg in messages
+            f"### **{msg.role.capitalize()}**: {msg.content}" for msg in messages
         ]
         hidden_messages = [
             Message(role="user", content=activation_prompt),
-            Message(role="assistant", content="\n".join(formatted_messages)),
+            Message(role="assistant", content="\n---\n".join(formatted_messages)),
         ]
         return messages, hidden_messages
 
@@ -143,20 +150,16 @@ Example:
             for i in range(len(main_qa_set.questions))
         ]
         random.shuffle(qa_pairs)
-        selected_question, selected_answer = qa_pairs.pop()
-
-        hidden_messages: List[Message] = []
-        for q, a in qa_pairs:
-            hidden_messages.extend(
-                [
-                    Message(role="user", content=q),
-                    Message(role="assistant", content=a),
-                ]
-            )
+        seed_question, seed_answer = qa_pairs.pop()
+        hidden_question, hidden_answer = qa_pairs.pop()
+        hidden_messages: List[Message] = [
+            Message(role="user", content=hidden_question),
+            Message(role="assistant", content=hidden_answer),
+        ]
 
         qa_seed = [
-            Message(role="user", content=f"{context}\n{selected_question}"),
-            Message(role="assistant", content=selected_answer),
+            Message(role="user", content=f"{context}\n{seed_question}"),
+            Message(role="assistant", content=seed_answer),
         ]
 
         conversations = await self._ensemble_conversations(10)
@@ -165,7 +168,7 @@ Example:
 
         messages: List[Message] = []
         remaining_chars = (
-            max_chars - len(context) - len(selected_question) - len(selected_answer)
+            max_chars - len(context) - len(seed_question) - len(seed_answer)
         )
 
         while remaining_chars > 0 and conversations:

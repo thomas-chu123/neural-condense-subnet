@@ -19,6 +19,7 @@ class TextCompressProtocol(Synapse):
     compressed_kv_b64: str = ""
     compressed_kv: Any = None
     compressed_length: int = 0
+
     expected_completion: str = ""
     activation_prompt: str = ""
     target_model: str = ""

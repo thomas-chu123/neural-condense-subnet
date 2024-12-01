@@ -5,6 +5,7 @@ from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
     DynamicCache,
+    TextGenerationPipeline,
 )
 import random
 import structlog
@@ -40,6 +41,11 @@ class ScoringService:
         ).to(dtype=self.dtype, device=self.device)
         self.tokenizer = AutoTokenizer.from_pretrained(
             "Condense-AI/Mistral-7B-Instruct-v0.2"
+        )
+        self.judge_pipeline = TextGenerationPipeline(
+            model=self.model,
+            tokenizer=self.tokenizer,
+            device=self.device,
         )
 
     @torch.no_grad()
