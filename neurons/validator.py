@@ -240,7 +240,12 @@ class Validator(base.BaseValidator):
 
     def set_weights(self):
         """Set weights for miners based on their performance."""
-        self.current_block = self.subtensor.get_current_block()
+        try:
+            self.current_block = self.subtensor.get_current_block()
+        except Exception as e:
+            logger.error(f"Error getting current block: {e}")
+            traceback.print_exc()
+            return
         self.last_update = self.metagraph.last_update[self.uid]
         weights = self.miner_manager.get_normalized_ratings(
             top_percentage=constants.TOP_PERCENTAGE_FOR_ALLOCATING_WEIGHTS
