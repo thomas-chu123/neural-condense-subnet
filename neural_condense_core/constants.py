@@ -67,25 +67,25 @@ class Constants(BaseModel):
             task="causal_conversation",
             criterias=["perplexity"],
             rewarding_frequency=1,
-            weight=0,
+            weight=1,
         ),
         SyntheticTaskConfig(
             task="question_answering",
             criterias=["accuracy"],
             rewarding_frequency=1,
-            weight=1,
+            weight=3,
         ),
         SyntheticTaskConfig(
             task="reconstruct_conversation",
             criterias=["perplexity"],
             rewarding_frequency=1,
-            weight=0,
+            weight=3,
         ),
         SyntheticTaskConfig(
             task="trivial_qa_conversation",
             criterias=["accuracy"],
             rewarding_frequency=1,
-            weight=1,
+            weight=3,
         ),
     ]
 
