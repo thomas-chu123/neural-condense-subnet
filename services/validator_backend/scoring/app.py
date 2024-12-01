@@ -44,7 +44,7 @@ class ScoringService:
         )
         self.judge_pipeline = pipeline(
             "text-generation",
-            model="unsloth/Llama-3.2-3B-Instruct",
+            model="unsloth/Meta-Llama-3.1-8B-Instruct",
             device=self.device,
         )
         print("Loaded judge pipeline")

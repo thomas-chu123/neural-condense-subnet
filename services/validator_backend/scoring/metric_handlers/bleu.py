@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModelForCausalLM, DynamicCache, TextGenerationPipeline
 import time
-from torchmetrics.functional.text import bleu_score
+from torchmetrics.functional.text import bleu_score as bleu_score_fn
 
 DEFAULT_VALUE = 0
 
@@ -55,7 +55,7 @@ def bleu(
     completion = completion.strip() or "I don't know"
     ground_truth = expected_completion.strip()
 
-    bleu_score = bleu_score(preds=[completion], target=[ground_truth])
+    bleu_score = bleu_score_fn(preds=[completion], target=[ground_truth])
     print(f"Completion: {completion}")
     print(f"Ground truth: {ground_truth}")
     print(f"BLEU score: {bleu_score}")
