@@ -205,8 +205,8 @@ Example:
         messages: List[Message],
         hidden_messages: List[Message],
     ) -> TextCompressProtocol:
-        original_messages = deepcopy(messages)
-        original_hidden_messages = deepcopy(hidden_messages)
+        original_messages = [msg.model_dump() for msg in messages]
+        original_hidden_messages = [msg.model_dump() for msg in hidden_messages]
         messages[-1].content = messages[-1].content + self.start_activation_token
         hidden_messages[1].content = (
             self.end_activation_token + hidden_messages[1].content

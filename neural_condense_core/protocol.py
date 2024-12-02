@@ -21,8 +21,8 @@ class TextCompressProtocol(Synapse):
     compressed_length: int = 0
 
     expected_completion: str = ""
-    messages: List[str] = []
-    hidden_messages: List[str] = []
+    messages: List[dict] = []
+    hidden_messages: List[dict] = []
     activation_prompt: str = ""
     target_model: str = ""
     local_filename: str = ""
