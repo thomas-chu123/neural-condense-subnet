@@ -247,6 +247,11 @@ class Validator(base.BaseValidator):
         """Set weights for miners based on their performance."""
         try:
             self.current_block = self.subtensor.get_current_block()
+        except OSError as e:
+            logger.warning(f"Subtensor not available, reconnecting: {e}")
+            self.subtensor = bt.subtensor(config=self.config)
+            logger.info("Reconnected to subtensor.")
+            self.current_block = self.subtensor.get_current_block()
         except Exception as e:
             logger.error(f"Error getting current block: {e}")
             traceback.print_exc()
