@@ -22,7 +22,7 @@ def accuracy(
 ) -> float:
     device = model.device
     summary_score = get_summary_score(context, kv_cache, model, tokenizer, embed_model)
-    if summary_score < 50:
+    if summary_score < 30:
         return 0
     expected_completion_ids = tokenizer(
         expected_completion,
