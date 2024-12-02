@@ -71,18 +71,6 @@ class CompressionService:
                 ultragist_ratio=[4],
             ).to(self.device)
 
-        elif self.algorithm == "tova":
-            self.ckpt = "Condense-AI/Mistral-7B-Instruct-v0.2"
-            self.tokenizer = AutoTokenizer.from_pretrained(self.ckpt)
-            self.model = AutoModelForCausalLM.from_pretrained(
-                self.ckpt, torch_dtype=self.dtype
-            ).to(self.device)
-
-            # Enable TOVA caching
-            enable_tova_caching(self.model)
-            self.multi_state_size = 512  # Adjust as needed
-            self.cache = TOVACache(self.multi_state_size)
-
     @torch.no_grad()
     def compress_context(self, context: str) -> str:
         """Compress context using selected algorithm"""

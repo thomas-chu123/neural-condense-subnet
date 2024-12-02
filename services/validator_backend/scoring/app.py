@@ -14,6 +14,7 @@ import gc
 from .datatypes import BatchedScoringRequest
 import traceback
 from .metric_handlers import metric_handlers
+import time
 
 gc.enable()
 structlog.configure(
@@ -61,6 +62,7 @@ class ScoringService:
                         device=self.device, dtype=self.dtype
                     )
                 )
+                start_time = time.time()
                 value = metric_handler(
                     embed_model=self.embed_model,
                     kv_cache=kv_cache,
@@ -68,6 +70,12 @@ class ScoringService:
                     expected_completion=request.ground_truth_request.expected_completion,
                     tokenizer=self.tokenizer,
                     model=self.model,
+                )
+                end_time = time.time()
+                logger.info(
+                    "metric_handler_time",
+                    handler_name=metric_handler.__name__,
+                    time_taken=f"{end_time - start_time:.2f}s"
                 )
             except Exception as e:
                 logger.error(

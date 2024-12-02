@@ -54,8 +54,8 @@ def accuracy(
     )
     completion = completion.strip() or "I don't know"
     ground_truth = expected_completion.strip()
-    logger.info(f"Completion: {completion}")
-    logger.info(f"Ground truth: {ground_truth}")
+    logger.debug(f"Completion: {completion}")
+    logger.debug(f"Ground truth: {ground_truth}")
     return get_accuracy(completion, ground_truth, embed_model)
 
 
@@ -73,9 +73,10 @@ def get_accuracy(completion: str, ground_truth: str, embed_model: AutoModel) -> 
     passage_embeddings = embed_model.encode(
         passages, instruction="", max_length=max_length
     )
-    scores = (query_embeddings @ passage_embeddings.T) * 100
-    logger.info(f"Scores: {scores}")
-    return scores[0][0].item()
+    score = (query_embeddings @ passage_embeddings.T) * 100
+    score = int(score[0][0].item())
+    logger.debug(f"Score: {score}")
+    return score
 
 
 def preprocess_batch(values: list[float]) -> list[float]:
