@@ -122,6 +122,7 @@ def get_summary_score(
         ],
         dim=1,
     )
+    logger.debug(f"N_SEEN_TOKENS: {_kv_cache._seen_tokens}")
     _kv_cache = _kv_cache.to(device=model.device)
     outputs = model.generate(
         input_ids=padded_input_ids, past_key_values=_kv_cache, max_new_tokens=256
