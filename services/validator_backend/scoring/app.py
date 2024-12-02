@@ -5,6 +5,7 @@ from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
     DynamicCache,
+    AutoModel,
 )
 from transformers import pipeline
 import random
@@ -42,13 +43,9 @@ class ScoringService:
         self.tokenizer = AutoTokenizer.from_pretrained(
             "Condense-AI/Mistral-7B-Instruct-v0.2"
         )
-        self.judge_pipeline = pipeline(
-            "text-generation",
-            model="unsloth/Mistral-Nemo-Instruct-2407",
-            device=self.device,
-            torch_dtype=self.dtype,
-        )
-        logger.info("Loaded judge pipeline")
+        self.embed_model = AutoModel.from_pretrained(
+            "nvidia/NV-Embed-v2", trust_remote_code=True, torch_dtype=self.dtype
+        ).to(device=self.device)
 
     @torch.no_grad()
     def get_metrics(self, request: BatchedScoringRequest) -> dict[str, float]:
@@ -65,7 +62,7 @@ class ScoringService:
                     )
                 )
                 value = metric_handler(
-                    judge_pipeline=self.judge_pipeline,
+                    embed_model=self.embed_model,
                     kv_cache=kv_cache,
                     activation_prompt=request.ground_truth_request.activation_prompt,
                     expected_completion=request.ground_truth_request.expected_completion,

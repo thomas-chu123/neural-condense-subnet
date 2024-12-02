@@ -9,7 +9,6 @@ import minio
 import structlog
 from .utils import upload_to_minio
 import argparse
-from TOVA import TOVACache, enable_tova_caching
 
 logger = structlog.get_logger()
 
@@ -71,7 +70,7 @@ class CompressionService:
                 attn_implementation="sdpa",
                 ultragist_ratio=[4],
             ).to(self.device)
-        
+
         elif self.algorithm == "tova":
             self.ckpt = "Condense-AI/Mistral-7B-Instruct-v0.2"
             self.tokenizer = AutoTokenizer.from_pretrained(self.ckpt)
@@ -84,7 +83,6 @@ class CompressionService:
             self.multi_state_size = 512  # Adjust as needed
             self.cache = TOVACache(self.multi_state_size)
 
-
     @torch.no_grad()
     def compress_context(self, context: str) -> str:
         """Compress context using selected algorithm"""
@@ -94,9 +92,6 @@ class CompressionService:
             return self._compress_soft_token(context)
         elif self.algorithm == "activation_beacon":
             return self._compress_activation_beacon(context)
-        elif self.algorithm == "tova":
-            return self._compress_tova(context)
-
 
     def _compress_kvpress(self, context: str) -> str:
         input_ids = self.tokenizer(context, return_tensors="pt").input_ids.to(
@@ -137,7 +132,6 @@ class CompressionService:
         )
 
         return self._save_and_return_url(past_key_values)
-
 
     def _save_and_return_url(self, past_key_values):
         """Process output and save to MinIO"""

@@ -154,6 +154,11 @@ Example:
         random.shuffle(qa_pairs)
         seed_question, seed_answer = qa_pairs.pop()
         hidden_question, hidden_answer = qa_pairs.pop()
+        hidden_question = (
+            "Please answer the question based on the above context."
+            "If there are no relevant information or no context provided, please say 'I don't know'."
+            f"\n\nQuestion: {hidden_question}"
+        )
         hidden_messages: List[Message] = [
             Message(role="user", content=hidden_question),
             Message(role="assistant", content=hidden_answer),

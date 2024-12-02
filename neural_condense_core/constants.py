@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from typing import List
 import os
-from concurrent.futures import ThreadPoolExecutor
 
 
 class TierConfig(BaseModel):
@@ -67,25 +66,25 @@ class Constants(BaseModel):
             task="causal_conversation",
             criterias=["perplexity"],
             rewarding_frequency=1,
-            weight=1,
+            weight=0,
         ),
         SyntheticTaskConfig(
             task="question_answering",
             criterias=["accuracy"],
             rewarding_frequency=1,
-            weight=4,
+            weight=1,
         ),
         SyntheticTaskConfig(
             task="reconstruct_conversation",
             criterias=["perplexity"],
             rewarding_frequency=1,
-            weight=1,
+            weight=0,
         ),
         SyntheticTaskConfig(
             task="trivial_qa_conversation",
-            criterias=["bleu"],
+            criterias=["accuracy"],
             rewarding_frequency=1,
-            weight=4,
+            weight=1,
         ),
     ]
 
@@ -95,7 +94,7 @@ class Constants(BaseModel):
     SUBNET_TEMPO: int = 360
     MIN_STAKE: int = int(os.environ.get("MIN_STAKE", 10000))
     RPE_PERCENTAGE_FOR_SYNTHETIC: float = 0.05
-    BATCH_SIZE: int = 4
+    BATCH_SIZE: int = 8
     SET_WEIGHTS_TIMEOUT: int = 120
     ORGANIC_CLIENT_URL: str = "https://ncs-client.condenses.ai"
     REPORT_URL: str = "https://report.condenses.ai"

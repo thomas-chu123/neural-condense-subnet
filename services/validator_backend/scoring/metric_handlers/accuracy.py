@@ -1,18 +1,15 @@
 import torch
 import torch.nn.functional as F
-from transformers import (
-    AutoTokenizer,
-    AutoModelForCausalLM,
-    DynamicCache,
-    TextGenerationPipeline,
-)
-import time
+from transformers import AutoTokenizer, AutoModel, DynamicCache, AutoModelForCausalLM
+import structlog
+
+logger = structlog.get_logger("accuracy")
 
 DEFAULT_VALUE = 0
 
 
 def accuracy(
-    judge_pipeline: TextGenerationPipeline,
+    embed_model: AutoModel,
     kv_cache: DynamicCache,
     activation_prompt: str,
     expected_completion: str,
@@ -21,14 +18,11 @@ def accuracy(
     max_tokens: int = 256,
     **kwargs,
 ) -> float:
-    print(f"Activation prompt: {activation_prompt}")
-    print(f"Expected completion: {expected_completion}")
     device = model.device
     expected_completion_ids = tokenizer(
         expected_completion,
         return_tensors="pt",
         add_special_tokens=False,
-        max_length=max_tokens,
     ).input_ids.to(device=device, dtype=torch.long)
     n_expected_completion_tokens = expected_completion_ids.shape[1]
     max_new_tokens = int(n_expected_completion_tokens * 1.5)
@@ -52,38 +46,36 @@ def accuracy(
         dim=1,
     )
     kv_cache = kv_cache.to(device=device)
-    start_time = time.time()
     outputs = model.generate(
         input_ids=input_ids, past_key_values=kv_cache, max_new_tokens=max_new_tokens
     )
-    end_time = time.time()
-    print(f"Generation time: {end_time - start_time} seconds")
     completion = tokenizer.decode(
         outputs[0][input_ids.shape[1] :], skip_special_tokens=True
     )
     completion = completion.strip() or "I don't know"
     ground_truth = expected_completion.strip()
-    judge_messages = [
-        {
-            "role": "user",
-            "content": (
-                "Evaluate the correctness of the given answer in comparison to the provided ground truth. "
-                "Respond concisely with 'yes' if the answer matches the ground truth idea and contains necessary information, "
-                "or 'no' if it is incorrect. No additional explanation is required.\n\n"
-                "### Ground Truth:\n---\n{ground_truth}\n---\n\n"
-                "### Answer:\n---\n{completion}\n---"
-            ).format(ground_truth=ground_truth, completion=completion),
-        },
-    ]
+    logger.info(f"Completion: {completion}")
+    logger.info(f"Ground truth: {ground_truth}")
+    return get_accuracy(completion, ground_truth, embed_model)
 
-    print(f"Judge messages: {judge_messages}")
-    start_time = time.time()
-    score = judge_pipeline(judge_messages, max_new_tokens=32, return_full_text=False)[
-        0
-    ]["generated_text"]
-    end_time = time.time()
-    print(f"Judge time: {end_time - start_time} seconds. Judge score: {score}")
-    return 1 if "yes" in score.lower() else 0
+
+def get_accuracy(completion: str, ground_truth: str, embed_model: AutoModel) -> float:
+    query_instruction = (
+        "Instruct: Given a text, retrieve the text that has similar meaning.\nQuery:"
+    )
+    queries = [ground_truth]
+    passages = [completion]
+    max_length = 1024
+
+    query_embeddings = embed_model.encode(
+        queries, instruction=query_instruction, max_length=max_length
+    )
+    passage_embeddings = embed_model.encode(
+        passages, instruction="", max_length=max_length
+    )
+    scores = (query_embeddings @ passage_embeddings.T) * 100
+    logger.info(f"Scores: {scores}")
+    return scores[0][0].item()
 
 
 def preprocess_batch(values: list[float]) -> list[float]:
