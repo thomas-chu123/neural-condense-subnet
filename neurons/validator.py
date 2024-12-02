@@ -163,6 +163,7 @@ class Validator(base.BaseValidator):
                 traceback.print_exc()
                 return
             if not ground_truth_synapse:
+                logger.warning("No ground truth synapse")
                 return
             synapse = ground_truth_synapse.miner_synapse
             k_factor = vutils.loop.get_k_factor(self.miner_manager, batched_uids)

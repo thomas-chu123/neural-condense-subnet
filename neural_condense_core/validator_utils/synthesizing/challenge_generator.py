@@ -54,15 +54,18 @@ class ChallengeGenerator:
         task: str = "question_answering",
         max_context_length_in_chars: int = 10000,
     ) -> TextCompressProtocol:
-        messages, hidden_messages = await self.task_to_builder[task](
-            max_context_length_in_chars
-        )
-        assert len(hidden_messages) == 2
-        synapse = self._build_protocol(tokenizer, messages, hidden_messages)
-        if task in ["question_answering", "trivial_qa_conversation"]:
-            synapse.expected_completion = hidden_messages[1].content.replace(
-                self.end_activation_token, ""
+        try:
+            messages, hidden_messages = await self.task_to_builder[task](
+                max_context_length_in_chars
             )
+            assert len(hidden_messages) == 2
+            synapse = self._build_protocol(tokenizer, messages, hidden_messages)
+            if task in ["question_answering", "trivial_qa_conversation"]:
+                synapse.expected_completion = hidden_messages[1].content.replace(
+                    self.end_activation_token, ""
+                )
+        except Exception as e:
+            raise e
         return synapse
 
     @retry(max_attempts=3)
