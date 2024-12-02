@@ -70,12 +70,13 @@ class ScoringService:
                     expected_completion=request.ground_truth_request.expected_completion,
                     tokenizer=self.tokenizer,
                     model=self.model,
+                    context=request.ground_truth_request.context,
                 )
                 end_time = time.time()
                 logger.info(
                     "metric_handler_time",
                     handler_name=metric_handler.__name__,
-                    time_taken=f"{end_time - start_time:.2f}s"
+                    time_taken=f"{end_time - start_time:.2f}s",
                 )
             except Exception as e:
                 logger.error(
