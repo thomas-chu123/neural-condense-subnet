@@ -63,6 +63,7 @@ class ChallengeGenerator:
                 self.end_activation_token, ""
             )
         return synapse
+
     @retry(max_attempts=3)
     async def _build_trivial_qa_conversation(
         self, max_chars: int
@@ -87,7 +88,7 @@ class ChallengeGenerator:
         hidden_messages = [
             Message(
                 role="user",
-                content=f"Based on the context provided, find the missing text:\n\n{fill_in_the_blank_sentence} \nReturn only the missing text without any additional explanation.",
+                content=f"You will be provided with a paragraph that existed in above conversation. Your task is to find the missing part that is replaced by _______. Return only the missing text without any additional explanation. Here is the paragraph:\n\n---\n{fill_in_the_blank_sentence}\n---",
             ),
             Message(role="assistant", content=hidden_sentence),
         ]
