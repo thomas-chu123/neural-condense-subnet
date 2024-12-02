@@ -75,6 +75,8 @@ def get_accuracy(completion: str, ground_truth: str, embed_model: AutoModel) -> 
     )
     score = (query_embeddings @ passage_embeddings.T) * 100
     score = int(score[0][0].item())
+    if score < 50:
+        score = 0
     logger.debug(f"Score: {score}")
     return score
 
