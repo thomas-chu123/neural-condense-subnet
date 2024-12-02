@@ -201,6 +201,8 @@ Example:
         messages: List[Message],
         hidden_messages: List[Message],
     ) -> TextCompressProtocol:
+        original_messages = deepcopy(messages)
+        original_hidden_messages = deepcopy(hidden_messages)
         messages[-1].content = messages[-1].content + self.start_activation_token
         hidden_messages[1].content = (
             self.end_activation_token + hidden_messages[1].content
@@ -219,6 +221,8 @@ Example:
             context=context,
             activation_prompt=activation_prompt,
             expected_completion=expected_completion,
+            messages=original_messages,
+            hidden_messages=original_hidden_messages,
         )
 
     async def _ensemble_conversations(self, n: int) -> List[List[Message]]:

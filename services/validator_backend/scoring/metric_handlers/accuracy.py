@@ -3,6 +3,8 @@ import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModel, DynamicCache, AutoModelForCausalLM
 import structlog
 from copy import deepcopy
+from typing import List
+from ..anti_exploitation.filter_existance import filter_existance
 
 logger = structlog.get_logger("accuracy")
 
@@ -16,10 +18,20 @@ def accuracy(
     expected_completion: str,
     tokenizer: AutoTokenizer,
     model: AutoModelForCausalLM,
+    messages: List[str],
+    hidden_messages: List[str],
     max_tokens: int = 256,
-    context: str = None,
     **kwargs,
 ) -> float:
+    if not filter_existance(
+        tokenizer=tokenizer,
+        model=model,
+        kv_cache=kv_cache,
+        messages=messages,
+        hidden_messages=hidden_messages,
+    ):
+        logger.warning("Completion does not exist in the conversation history")
+        return 0
     device = model.device
     expected_completion_ids = tokenizer(
         expected_completion,
@@ -48,7 +60,6 @@ def accuracy(
         ],
         dim=1,
     )
-    kv_cache = kv_cache.to(device=device)
     outputs = model.generate(
         input_ids=input_ids, past_key_values=kv_cache, max_new_tokens=max_new_tokens
     )
@@ -77,11 +88,15 @@ def get_accuracy(completion: str, ground_truth: str, embed_model: AutoModel) -> 
     passage_embeddings = embed_model.encode(
         passages, instruction="", max_length=max_length
     )
-    score = (query_embeddings @ passage_embeddings.T) * 100
-    score = int(score[0][0].item())
-    if score < 50:
+    similarity = (query_embeddings @ passage_embeddings.T) * 100
+    similarity_percentage = int(similarity[0][0].item())
+    if similarity_percentage < 50:
         score = 0
-    logger.debug(f"Score: {score}")
+    elif similarity_percentage < 70:
+        score = 0.5
+    else:
+        score = 1
+    logger.debug(f"Score: {score}, similarity: {similarity_percentage}")
     return score
 
 
