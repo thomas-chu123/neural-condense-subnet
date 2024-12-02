@@ -71,6 +71,8 @@ class ScoringService:
                     tokenizer=self.tokenizer,
                     model=self.model,
                     context=request.ground_truth_request.context,
+                    messages=request.ground_truth_request.messages,
+                    hidden_messages=request.ground_truth_request.hidden_messages,
                 )
                 end_time = time.time()
                 logger.info(

@@ -18,6 +18,8 @@ class GroundTruthRequest(BaseModel):
     expected_completion: str
     activation_prompt: str
     model_name: str
+    messages: List[str]
+    hidden_messages: List[str]
     criterias: List[str]
 
 
