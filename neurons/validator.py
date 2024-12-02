@@ -166,6 +166,7 @@ class Validator(base.BaseValidator):
                 return
             synapse = ground_truth_synapse.miner_synapse
             k_factor = vutils.loop.get_k_factor(self.miner_manager, batched_uids)
+            logger.info(f"K factor: {k_factor}")
             responses = await vutils.loop.query_miners(
                 dendrite=dendrite,
                 metagraph=self.metagraph,

@@ -222,8 +222,8 @@ Example:
             context=context,
             activation_prompt=activation_prompt,
             expected_completion=expected_completion,
-            # messages=original_messages,
-            # hidden_messages=original_hidden_messages,
+            messages=original_messages,
+            hidden_messages=original_hidden_messages,
         )
 
     async def _ensemble_conversations(self, n: int) -> List[List[Message]]:
