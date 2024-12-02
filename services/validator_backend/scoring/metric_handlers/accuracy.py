@@ -87,9 +87,9 @@ def get_accuracy(completion: str, ground_truth: str, embed_model: AutoModel) -> 
 
 
 def get_summary_similarity(context: str, summary: str, embed_model: AutoModel) -> float:
-    query_instruction = "Instruct: Given a context, retrieve the most relevant summary."
-    queries = [context]
-    passages = [summary]
+    query_instruction = "Instruct: Given a summarized context, retrieve the most relevant context that contains the same information."
+    queries = [summary]
+    passages = [context]
     max_length = 8192
 
     query_embeddings = embed_model.encode(
