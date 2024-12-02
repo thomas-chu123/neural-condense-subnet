@@ -166,6 +166,7 @@ class Validator(base.BaseValidator):
                 logger.warning("No ground truth synapse")
                 return
             synapse = ground_truth_synapse.miner_synapse
+            logger.info(f"Synapse: {synapse}")
             k_factor = vutils.loop.get_k_factor(self.miner_manager, batched_uids)
             logger.info(f"K factor: {k_factor}")
             responses = await vutils.loop.query_miners(
