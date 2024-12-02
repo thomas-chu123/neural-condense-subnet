@@ -35,6 +35,7 @@ def accuracy(
         max_length=max_tokens,
     ).input_ids.to(device=device, dtype=torch.long)
     num_seen_tokens = kv_cache._seen_tokens
+    logger.debug(f"Num seen tokens: {num_seen_tokens}")
     input_ids = torch.cat(
         [
             torch.full(
