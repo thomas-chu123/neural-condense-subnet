@@ -110,7 +110,9 @@ class Validator(base.BaseValidator):
             pre_batched_uids = vutils.loop.get_batched_uids(
                 serving_counter, self.miner_manager.metadata
             )
+            logger.info(f"Pre-batched UIDs: {pre_batched_uids}")
             sleep_per_batch = sleep_per_set / len(pre_batched_uids)
+            logger.info(f"Sleep per batch: {sleep_per_batch}")
             for batch_uids in pre_batched_uids:
                 batched_uids = [
                     uid for uid in batch_uids if serving_counter[uid].increment()
@@ -118,6 +120,7 @@ class Validator(base.BaseValidator):
 
                 if len(batched_uids) < 2:
                     continue
+                logger.info(f"Batched UIDs: {batched_uids}")
                 future = self.loop.create_task(
                     self._forward_batch(tier, model_name, batched_uids, tokenizer)
                 )
@@ -145,6 +148,7 @@ class Validator(base.BaseValidator):
         try:
             dendrite = bt.dendrite(self.wallet)
             task_config = vutils.loop.get_task_config()
+            logger.info(f"Task config: {task_config}")
             try:
                 ground_truth_synapse = await vutils.loop.prepare_synapse(
                     challenge_generator=self.challenge_generator,
@@ -153,6 +157,7 @@ class Validator(base.BaseValidator):
                     tier_config=constants.TIER_CONFIG[tier],
                     model_name=model_name,
                 )
+                logger.info(f"Generated synapse")
             except Exception as e:
                 logger.error(f"Error preparing synapse: {e}")
                 traceback.print_exc()
