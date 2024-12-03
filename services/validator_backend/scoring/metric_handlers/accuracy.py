@@ -26,6 +26,7 @@ def accuracy(
     context: str = "",
     **kwargs,
 ) -> float:
+    device = model.device
     context_ids = tokenizer.encode(
         context,
         return_tensors="pt",
@@ -44,7 +45,7 @@ def accuracy(
     ):
         logger.warning("Existance check failed")
         return 0
-    device = model.device
+
     expected_completion_ids = tokenizer(
         expected_completion,
         return_tensors="pt",
