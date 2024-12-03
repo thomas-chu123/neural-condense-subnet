@@ -4,7 +4,7 @@ from transformers import AutoTokenizer, AutoModel, DynamicCache, AutoModelForCau
 import structlog
 from copy import deepcopy
 from typing import List
-from ..anti_exploitation.filter_existance import filter_existance
+from ..anti_exploitation.filter_existance import FilterExistanceChecker
 
 logger = structlog.get_logger("accuracy")
 
@@ -12,25 +12,26 @@ DEFAULT_VALUE = 0
 
 
 def accuracy(
+    filter_existance_checker: FilterExistanceChecker,
     embed_model: AutoModel,
     kv_cache: DynamicCache,
     activation_prompt: str,
     expected_completion: str,
     tokenizer: AutoTokenizer,
     model: AutoModelForCausalLM,
-    messages: List[str],
-    hidden_messages: List[str],
+    positive_chunk: str,
+    negative_chunk: str,
     max_tokens: int = 256,
     **kwargs,
 ) -> float:
     num_seen_tokens = kv_cache._seen_tokens
     logger.debug(f"Num seen tokens: {num_seen_tokens}")
-    if not filter_existance(
+    if not filter_existance_checker.filter_existance(
         tokenizer=tokenizer,
         model=model,
         kv_cache=kv_cache,
-        messages=messages,
-        hidden_messages=hidden_messages,
+        positive_chunk=positive_chunk,
+        negative_chunk=negative_chunk,
     ):
         logger.warning("Completion does not exist in the conversation history")
         return 0

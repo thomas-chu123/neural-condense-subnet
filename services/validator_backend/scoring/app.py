@@ -14,6 +14,7 @@ import gc
 from .datatypes import BatchedScoringRequest
 import traceback
 from .metric_handlers import metric_handlers
+from .anti_exploitation.filter_existance import FilterExistanceChecker
 import time
 
 gc.enable()
@@ -47,6 +48,7 @@ class ScoringService:
         self.embed_model = AutoModel.from_pretrained(
             "nvidia/NV-Embed-v2", trust_remote_code=True, torch_dtype=self.dtype
         ).to(device=self.device)
+        self.filter_existance_checker = FilterExistanceChecker()
 
     @torch.no_grad()
     def get_metrics(self, request: BatchedScoringRequest) -> dict[str, float]:
@@ -54,6 +56,12 @@ class ScoringService:
         values = []
         metric_handler = metric_handlers[criteria]["handler"]
         preprocess_batch = metric_handlers[criteria]["preprocess_batch"]
+        positive_chunk, negative_chunk = (
+            self.filter_existance_checker.get_messages_pair(
+                request.ground_truth_request.messages,
+                request.ground_truth_request.hidden_messages,
+            )
+        )
         for miner_response in request.miner_responses:
             try:
                 miner_response.decode()
@@ -64,6 +72,7 @@ class ScoringService:
                 )
                 start_time = time.time()
                 value = metric_handler(
+                    filter_existance_checker=self.filter_existance_checker,
                     embed_model=self.embed_model,
                     kv_cache=kv_cache,
                     activation_prompt=request.ground_truth_request.activation_prompt,
@@ -71,8 +80,8 @@ class ScoringService:
                     tokenizer=self.tokenizer,
                     model=self.model,
                     context=request.ground_truth_request.context,
-                    messages=request.ground_truth_request.messages,
-                    hidden_messages=request.ground_truth_request.hidden_messages,
+                    positive_chunk=positive_chunk,
+                    negative_chunk=negative_chunk,
                 )
                 end_time = time.time()
                 logger.info(
