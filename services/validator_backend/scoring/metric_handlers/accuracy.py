@@ -5,6 +5,7 @@ import structlog
 from copy import deepcopy
 from typing import List
 from ..anti_exploitation.filter_existance import FilterExistanceChecker
+from ..utils import generate_answer
 
 logger = structlog.get_logger("accuracy")
 
@@ -22,6 +23,7 @@ def accuracy(
     positive_chunk: str,
     negative_chunk: str,
     max_tokens: int = 256,
+    context: str = "",
     **kwargs,
 ) -> float:
     num_seen_tokens = kv_cache._seen_tokens
@@ -33,7 +35,7 @@ def accuracy(
         positive_chunk=positive_chunk,
         negative_chunk=negative_chunk,
     ):
-        logger.warning("Completion does not exist in the conversation history")
+        logger.warning("Existance check failed")
         return 0
     device = model.device
     expected_completion_ids = tokenizer(
@@ -49,25 +51,21 @@ def accuracy(
         add_special_tokens=False,
         max_length=max_tokens,
     ).input_ids.to(device=device, dtype=torch.long)
-    input_ids = torch.cat(
-        [
-            torch.full(
-                (1, num_seen_tokens),
-                0,
-                dtype=torch.long,
-                device=device,
-            ),
-            prompt_ids,
-        ],
-        dim=1,
+    context_ids = tokenizer.encode(
+        context,
+        return_tensors="pt",
+        add_special_tokens=False,
+    ).to(device=device, dtype=torch.long)
+    context_length = context_ids.shape[1]
+
+    completion = generate_answer(
+        model=model,
+        tokenizer=tokenizer,
+        question_ids=prompt_ids,
+        cache=kv_cache,
+        context_length=context_length,
+        max_new_tokens=max_new_tokens,
     )
-    outputs = model.generate(
-        input_ids=input_ids, past_key_values=kv_cache, max_new_tokens=max_new_tokens
-    )
-    completion = tokenizer.decode(
-        outputs[0][input_ids.shape[1] :], skip_special_tokens=True
-    )
-    completion = completion.strip() or "I don't know"
     ground_truth = expected_completion.strip()
     logger.debug(f"Activation prompt: {activation_prompt}")
     logger.debug(f"Completion: {completion}")
