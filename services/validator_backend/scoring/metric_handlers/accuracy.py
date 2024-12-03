@@ -26,6 +26,12 @@ def accuracy(
     context: str = "",
     **kwargs,
 ) -> float:
+    context_ids = tokenizer.encode(
+        context,
+        return_tensors="pt",
+        add_special_tokens=False,
+    ).to(device=device, dtype=torch.long)
+    context_length = context_ids.shape[1]
     num_seen_tokens = kv_cache._seen_tokens
     logger.debug(f"Num seen tokens: {num_seen_tokens}")
     if not filter_existance_checker.filter_existance(
@@ -34,6 +40,7 @@ def accuracy(
         kv_cache=kv_cache,
         positive_chunk=positive_chunk,
         negative_chunk=negative_chunk,
+        context_length=context_length,
     ):
         logger.warning("Existance check failed")
         return 0
@@ -51,12 +58,6 @@ def accuracy(
         add_special_tokens=False,
         max_length=max_tokens,
     ).input_ids.to(device=device, dtype=torch.long)
-    context_ids = tokenizer.encode(
-        context,
-        return_tensors="pt",
-        add_special_tokens=False,
-    ).to(device=device, dtype=torch.long)
-    context_length = context_ids.shape[1]
 
     completion = generate_answer(
         model=model,
