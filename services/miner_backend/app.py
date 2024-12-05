@@ -24,11 +24,12 @@ class CompressionService:
         """Initialize MinIO client and validate config"""
         self.bucket_name = os.getenv("MINIO_BUCKET", "condense_miner")
         self.endpoint_url = os.getenv("MINIO_SERVER")
+        self.internal_url = os.getenv("MINIO_INTERNAL_SERVER")
 
         self._validate_minio_config()
 
         self.minio_client = minio.Minio(
-            self.endpoint_url.replace("http://", "").replace("https://", ""),
+            self.internal_url.replace("http://", "").replace("https://", ""),
             access_key=os.getenv("MINIO_ACCESS_KEY"),
             secret_key=os.getenv("MINIO_SECRET_KEY"),
             secure=False,
@@ -170,6 +171,10 @@ def create_app(algorithm):
 
         try:
             compressed_kv_url = service.compress_context(context)
+            logger.info("compression_success",
+                        context_len=len(context),
+                        target_model=target_model,
+                        url=compressed_kv_url)
             return jsonify(
                 {"target_model": target_model, "compressed_kv_url": compressed_kv_url}
             )

@@ -73,6 +73,8 @@ class Miner:
             wallet=self.wallet,
             port=self.config.axon.port,
             external_port=self.config.axon.external_port,
+            external_ip=self.config.axon.external_ip,
+            ip=self.config.axon.ip,
         )
         bt.logging.info("Attaching forward function to axon.")
         for blacklist_fn, forward_fn in zip(self.blacklist_fns, self.forward_fns):

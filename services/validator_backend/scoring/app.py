@@ -40,8 +40,10 @@ class ScoringService:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.dtype = torch.bfloat16
         self.model = AutoModelForCausalLM.from_pretrained(
-            "Condense-AI/Mistral-7B-Instruct-v0.2"
-        ).to(dtype=self.dtype, device=self.device)
+            "Condense-AI/Mistral-7B-Instruct-v0.2",
+            device_map="auto",
+            torch_dtype=self.dtype,
+        )
         self.tokenizer = AutoTokenizer.from_pretrained(
             "Condense-AI/Mistral-7B-Instruct-v0.2"
         )
