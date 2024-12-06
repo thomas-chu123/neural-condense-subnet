@@ -43,8 +43,10 @@ class CompressionService:
             self.ckpt = "Condense-AI/Mistral-7B-Instruct-v0.2"
             self.tokenizer = AutoTokenizer.from_pretrained(self.ckpt)
             self.model = AutoModelForCausalLM.from_pretrained(
-                self.ckpt, torch_dtype=self.dtype
-            ).to(self.device)
+                self.ckpt,
+                torch_dtype=self.dtype,
+                device_map="auto",
+            )
             self.press = KnormPress(compression_ratio=0.75)
 
         elif self.algorithm == "soft_token":
@@ -54,8 +56,10 @@ class CompressionService:
             self.condenser.eval()
             self.tokenizer = AutoTokenizer.from_pretrained(self.ckpt)
             self.model = AutoModelForCausalLM.from_pretrained(
-                self.ckpt, torch_dtype=self.dtype
-            ).to(self.device)
+                self.ckpt,
+                torch_dtype=self.dtype,
+                device_map="auto",
+            )
             self.press = KnormPress(compression_ratio=0.75)
 
         elif self.algorithm == "activation_beacon":
@@ -69,8 +73,9 @@ class CompressionService:
                 trust_remote_code=True,
                 torch_dtype=self.dtype,
                 attn_implementation="sdpa",
-                ultragist_ratio=[4],
-            ).to(self.device)
+                ultragist_ratio=[32],
+                device_map="auto",
+            )
 
     @torch.no_grad()
     def compress_context(self, context: str) -> str:
@@ -83,12 +88,12 @@ class CompressionService:
             return self._compress_activation_beacon(context)
 
     def _compress_kvpress(self, context: str) -> str:
-        input_ids = self.tokenizer(context, return_tensors="pt").input_ids.to(
+        input_ids = self.tokenizer(context, return_tensors="pt", add_special_tokens=False).input_ids.to(
             self.device
         )
 
         with torch.no_grad(), self.press(self.model):
-            past_key_values = self.model(input_ids).past_key_values
+            past_key_values = self.model(input_ids, num_logits_to_keep=1).past_key_values
 
         return self._save_and_return_url(past_key_values)
 
