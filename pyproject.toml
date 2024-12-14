@@ -33,6 +33,7 @@ dependencies = [
     "sqlalchemy>=2.0.36",
     "openai>=1.57.2",
     "firerequests>=0.1.1",
+    "flash-attn==2.7.2.post1",
 ]
 
 [project.urls]
@@ -41,6 +42,7 @@ repository = "https://github.com/condenses/neural-condense-subnet"
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+no-build-isolation = true
 
 [tool.setuptools.packages.find]
 where = ["."]
