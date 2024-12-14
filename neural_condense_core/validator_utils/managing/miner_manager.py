@@ -187,8 +187,9 @@ class MinerManager:
             miner = self.session.query(MinerMetadata).get(uid)
             previous_scores.append(miner.score)
 
-            # EMA with 0.9 decay factor
-            miner.score = miner.score * 0.9 + score * 0.1
+            miner.score = miner.score * constants.SCORE_DECAY_FACTOR + score * (
+                1 - constants.SCORE_DECAY_FACTOR
+            )
             miner.score = max(0, miner.score)
             updated_scores.append(miner.score)
 

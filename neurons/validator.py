@@ -119,7 +119,7 @@ class Validator(base.BaseValidator):
                 start_time = time.time()
                 # Wait if we have too many pending futures
                 pending_futures = [f for f in futures if not f.done()]
-                while len(pending_futures) >= 10:
+                while len(pending_futures) >= 20:
                     logger.info(
                         f"Waiting for {len(pending_futures)} futures to complete."
                     )

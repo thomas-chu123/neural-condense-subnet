@@ -3,6 +3,7 @@ import bittensor as bt
 import random
 import httpx
 import wandb
+import time
 from ...protocol import TextCompressProtocol
 from ...logger import logger
 from ..synthesizing.challenge_generator import ChallengeGenerator
@@ -144,6 +145,7 @@ async def process_and_score_responses(
     invalid_reasons: list[str] = [],
     timeout: int = 120,
 ) -> dict[str, list]:
+    start_time = time.time()
     accuracies, accelerate_rewards = await get_accuracies(
         valid_responses=valid_responses,
         ground_truth_synapse=ground_truth_synapse,
@@ -152,6 +154,7 @@ async def process_and_score_responses(
         timeout=timeout,
         config=config,
     )
+    backend_time = time.time() - start_time
     scores = [
         (
             accu * (1 - tier_config.accelerate_reward_scalar)
@@ -175,6 +178,7 @@ async def process_and_score_responses(
         "accelerate_reward": accelerate_rewards + [0] * len(invalid_uids),
         "score_change": score_changes,
         "invalid_reasons": [""] * len(valid_uids) + invalid_reasons,
+        "backend_time": [backend_time] * len(total_uids),
     }
     return logs, total_uids
 

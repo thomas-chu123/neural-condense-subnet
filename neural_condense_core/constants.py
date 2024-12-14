@@ -124,6 +124,7 @@ class Constants(BaseModel):
     TOP_PERCENTAGE_FOR_ALLOCATING_WEIGHTS: float = 0.3
     EXPECTED_MEAN_SCORE: float = 0.75
     EXPECTED_MAX_STD_SCORE: float = 0.1
+    SCORE_DECAY_FACTOR: float = 0.95
 
     DATABASE_CONFIG: DatabaseConfig = Field(
         default_factory=lambda: DatabaseConfig(
