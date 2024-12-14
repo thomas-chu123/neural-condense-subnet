@@ -60,7 +60,7 @@ class ChallengeGenerator:
 
     @retry(max_attempts=3)
     async def _build_qa_conversation(self, max_chars: int) -> Tuple[str, str, str]:
-        context_qa_items = await self.synthesizer.get_qas(n=10)
+        context_qa_items = await self.synthesizer.get_qas(n=20)
         context = ""
         question_answer_pairs = []
         for qa_item in context_qa_items:
