@@ -120,20 +120,4 @@ def generate_answer(
             break
     answer = tokenizer.decode(torch.stack(generated_ids), skip_special_tokens=True)
 
-    key_attr, value_attr = "key_cache", "value_cache"
-
-    setattr(
-        cache,
-        key_attr,
-        [key[:, :, :c] for key, c in zip(getattr(cache, key_attr), cache_seq_lengths)],
-    )
-    setattr(
-        cache,
-        value_attr,
-        [
-            value[:, :, :c]
-            for value, c in zip(getattr(cache, value_attr), cache_seq_lengths)
-        ],
-    )
-
     return answer

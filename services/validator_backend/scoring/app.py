@@ -54,6 +54,7 @@ class ScoringService:
             "upstage/solar-pro-preview-instruct",
             torch_dtype=self.dtype,
             trust_remote_code=True,
+            attn_implementation="flash_attention_2",
         )
         self.judge_pipeline = TextGenerationPipeline(
             model=j_model,
