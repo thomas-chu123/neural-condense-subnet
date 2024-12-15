@@ -9,6 +9,7 @@ import minio
 import structlog
 from .utils import upload_to_minio
 import argparse
+import torch.nn.functional as F
 
 logger = structlog.get_logger()
 
@@ -93,9 +94,34 @@ class CompressionService:
         )
 
         with torch.no_grad(), self.press(self.model):
-            past_key_values = self.model(input_ids, num_logits_to_keep=1).past_key_values
+            outputs = self.model(input_ids, output_attentions=True)
+            past_key_values = outputs.past_key_values
+            attentions = outputs.attentions
 
-        return self._save_and_return_url(past_key_values)
+        # Use attention scores to determine which logits to keep
+        attention_scores = torch.stack(attentions).mean(dim=0)  # Average over layers
+        topk_scores, topk_indices = torch.topk(attention_scores, k=1, dim=-1)
+
+        # Keep only the top-k logits based on attention scores
+        compressed_past_key_values = []
+        for layer in past_key_values:
+            compressed_layer = []
+            for tensor in layer:
+                compressed_tensor = tensor.index_select(dim=-1, index=topk_indices.squeeze(-1))
+                compressed_layer.append(compressed_tensor)
+            compressed_past_key_values.append(tuple(compressed_layer))
+
+        return self._save_and_return_url(compressed_past_key_values)
+
+    # def _compress_kvpress(self, context: str) -> str:
+    #     input_ids = self.tokenizer(context, return_tensors="pt", add_special_tokens=False).input_ids.to(
+    #         self.device
+    #     )
+    #
+    #     with torch.no_grad(), self.press(self.model):
+    #         past_key_values = self.model(input_ids, num_logits_to_keep=1).past_key_values
+    #
+    #     return self._save_and_return_url(past_key_values)
 
     def _compress_soft_token(self, context: str) -> str:
         compressed_tokens = self.condenser.compress(context)
