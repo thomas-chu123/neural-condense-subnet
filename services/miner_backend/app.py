@@ -1,7 +1,15 @@
 from flask import Flask, request, jsonify
 import time
 from transformers import AutoModelForCausalLM, AutoTokenizer, DynamicCache
-from kvpress import KnormPress
+from kvpress import (
+    ExpectedAttentionPress,
+    KnormPress,
+    ObservedAttentionPress,
+    RandomPress,
+    SnapKVPress,
+    StreamingLLMPress,
+    # PerLayerCompressionPress,
+)
 import torch
 from .soft_token.soft_token_condenser_modeling import Condenser
 import os
@@ -47,7 +55,8 @@ class CompressionService:
                 torch_dtype=self.dtype,
                 device_map="auto",
             )
-            self.press = KnormPress(compression_ratio=0.75)
+            # self.press = KnormPress(compression_ratio=0.75)
+            self.press = ExpectedAttentionPress(compression_ratio=0.5)
 
         elif self.algorithm == "soft_token":
             self.ckpt = "Condense-AI/Mistral-7B-Instruct-v0.2"
