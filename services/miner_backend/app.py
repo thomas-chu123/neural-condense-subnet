@@ -54,6 +54,7 @@ class CompressionService:
                 self.ckpt,
                 torch_dtype=self.dtype,
                 device_map="auto",
+                attn_implementation="sdpa",
             )
             # self.press = KnormPress(compression_ratio=0.75)
             self.press = ExpectedAttentionPress(compression_ratio=0.5)
