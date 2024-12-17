@@ -108,7 +108,7 @@ class CompressionService:
             past_key_values = self.model(input_ids, num_logits_to_keep=1).past_key_values
         
         token_length = sum(tensor.size(1) for layer in past_key_values for tensor in layer)
-        logger.info("kvpress metrics",token_length=token_length)
+        logger.info("kvpress_model_metrics",token_length=token_length)
 
         return self._save_and_return_url(past_key_values)
 
@@ -121,7 +121,7 @@ class CompressionService:
             ).past_key_values
 
         token_length = sum(tensor.size(1) for layer in past_key_values for tensor in layer)
-        logger.info("kvpress metrics",token_length=token_length)
+        logger.info("soft_token_model_metrics",token_length=token_length)
 
         return self._save_and_return_url(past_key_values)
 
@@ -137,7 +137,7 @@ class CompressionService:
         # Log metrics specific to activation beacon
         ultragist_size, raw_size, sink_size = self.model.memory.get_memory_size()
         logger.info(
-            "model_metrics",
+            "beacon_model_metrics",
             ultragist_size=ultragist_size,
             raw_size=raw_size,
             sink_size=sink_size,
