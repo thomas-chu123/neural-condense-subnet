@@ -40,14 +40,19 @@ class ScoringService:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.dtype = torch.bfloat16
         self.model = AutoModelForCausalLM.from_pretrained(
-            "Condense-AI/Mistral-7B-Instruct-v0.2"
-        ).to(dtype=self.dtype, device=self.device)
+            "Condense-AI/Mistral-7B-Instruct-v0.2",
+            torch_dtype=self.dtype,
+            device_map="auto",
+        )
         self.tokenizer = AutoTokenizer.from_pretrained(
             "Condense-AI/Mistral-7B-Instruct-v0.2"
         )
         self.embed_model = AutoModel.from_pretrained(
-            "nvidia/NV-Embed-v2", trust_remote_code=True, torch_dtype=self.dtype
-        ).to(device=self.device)
+            "nvidia/NV-Embed-v2",
+            trust_remote_code=True,
+            torch_dtype=self.dtype,
+            device_map="auto",
+        )
         self.filter_existance_checker = FilterExistanceChecker()
 
     @torch.no_grad()
