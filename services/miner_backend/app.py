@@ -57,7 +57,7 @@ class CompressionService:
                 attn_implementation="sdpa",
             )
             # self.press = KnormPress(compression_ratio=0.75)
-            self.press = ExpectedAttentionPress(compression_ratio=0.5)
+            self.press = ExpectedAttentionPress(compression_ratio=0.55)
 
         elif self.algorithm == "soft_token":
             self.ckpt = "Condense-AI/Mistral-7B-Instruct-v0.2"
@@ -69,8 +69,10 @@ class CompressionService:
                 self.ckpt,
                 torch_dtype=self.dtype,
                 device_map="auto",
+                attn_implementation="sdpa",
             )
-            self.press = KnormPress(compression_ratio=0.75)
+            # self.press = KnormPress(compression_ratio=0.75)
+            self.press = ExpectedAttentionPress(compression_ratio=0.55)
 
         elif self.algorithm == "activation_beacon":
             self.ckpt = "namespace-Pt/ultragist-mistral-7b-inst"
@@ -104,6 +106,9 @@ class CompressionService:
 
         with torch.no_grad(), self.press(self.model):
             past_key_values = self.model(input_ids, num_logits_to_keep=1).past_key_values
+        
+        token_length = sum(tensor.size(1) for layer in past_key_values for tensor in layer)
+        logger.info("kvpress metrics",token_length=token_length)
 
         return self._save_and_return_url(past_key_values)
 
@@ -114,6 +119,9 @@ class CompressionService:
             past_key_values = self.model(
                 inputs_embeds=compressed_tokens
             ).past_key_values
+
+        token_length = sum(tensor.size(1) for layer in past_key_values for tensor in layer)
+        logger.info("kvpress metrics",token_length=token_length)
 
         return self._save_and_return_url(past_key_values)
 
